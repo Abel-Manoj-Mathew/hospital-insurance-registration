@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum LanguageCode {
+  en
+  ml
+}
+
+enum DocumentTypeId {
+  hospitalId
+  aadhaar
+  insuranceCard
+  policyDocument
+  labReport
+}
+
+enum DocumentStatus {
+  not_uploaded
+  processing
+  accepted
+  retake_required
+  review_required
+  failed
+}
+
+enum CaptureMethod {
+  camera
+  upload
+}
+
+enum BedPreferenceId {
+  sharing
+  single
+  deluxe
+  superDeluxe
+}
+
+enum SubmissionStatus {
+  idle
+  submitting
+  submitted
+  failed
+}
+
+model Session {
+  id                     String            @id
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  language                LanguageCode?
+  bedPreferencesConfirmed Boolean          @default(false)
+  submissionStatus        SubmissionStatus @default(idle)
+  submissionReferenceId   String?
+  submittedAt              DateTime?
+
+  documents      Document[]
+  bedPreferences BedPreference[]
+
+  @@map("sessions")
+}
+
+model Document {
+  id                  String          @id @default(uuid())
+  sessionId           String
+  session             Session         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  documentType         DocumentTypeId
+  status               DocumentStatus @default(not_uploaded)
+  captureMethod        CaptureMethod?
+  capturedAt           DateTime?
+  version              Int            @default(0)
+  rejectionReasonKey   String?
+  rejectionDetailKey   String?
+  extractedFields      Json?
+  documentReference    String?
+  updatedAt            DateTime       @updatedAt
+
+  @@unique([sessionId, documentType])
+  @@map("documents")
+}
+
+model BedPreference {
+  id        String          @id @default(uuid())
+  sessionId String
+  session   Session         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  bedType   BedPreferenceId
+  rank      Int
+
+  @@unique([sessionId, bedType])
+  @@unique([sessionId, rank])
+  @@map("bed_preferences")
+}

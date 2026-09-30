@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Public Sans", "Noto Sans Malayalam", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --text-display: 1.625rem;
+  --text-display--line-height: 1.25;
+  --text-display--letter-spacing: -0.015em;
+  --text-title: 1.1875rem;
+  --text-title--line-height: 1.35;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.55;
+  --text-small: 0.9375rem;
+  --text-small--line-height: 1.5;
+  --text-meta: 0.875rem;
+  --text-meta--line-height: 1.45;
+
+  --color-canvas: #f3f5f8;
+
+  /* Medical blue — actions, focus, progress only */
+  --color-primary-50: #eef3fa;
+  --color-primary-100: #dce6f4;
+  --color-primary-200: #b9cde8;
+  --color-primary-300: #8aaad6;
+  --color-primary-400: #5a86c0;
+  --color-primary-500: #336aae;
+  --color-primary-600: #1f5596;
+  --color-primary-700: #17467f;
+  --color-primary-800: #123867;
+  --color-primary-900: #0e2b50;
+
+  /* Cool blue-gray neutrals */
+  --color-ink-50: #f6f8fa;
+  --color-ink-100: #edf0f4;
+  --color-ink-150: #e3e7ed;
+  --color-ink-200: #d3d9e1;
+  --color-ink-300: #b3bcc8;
+  --color-ink-400: #8792a2;
+  --color-ink-500: #5f6b7c;
+  --color-ink-600: #4b586a;
+  --color-ink-700: #3a4758;
+  --color-ink-800: #253243;
+  --color-ink-900: #16222f;
+
+  --color-success-50: #ebf6f0;
+  --color-success-100: #d3ecdd;
+  --color-success-500: #2e8b57;
+  --color-success-600: #1f7a48;
+  --color-success-700: #17633a;
+
+  --color-warning-50: #fdf6e7;
+  --color-warning-100: #f8e6bd;
+  --color-warning-500: #c98a0b;
+  --color-warning-600: #9a6200;
+  --color-warning-700: #7a4d00;
+
+  --color-error-50: #fcefee;
+  --color-error-100: #f7d7d4;
+  --color-error-500: #c5372c;
+  --color-error-600: #a92d23;
+  --color-error-700: #8a241c;
+
+  --animate-enter: enter 220ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-pop: pop 320ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
+  --animate-scan: scan 1.8s ease-in-out infinite alternate;
+
+  @keyframes scan {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    /* Keep keyboard-focused elements clear of the sticky header and action bar. */
+    scroll-padding-top: 5rem;
+    scroll-padding-bottom: 10rem;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-ink-150);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+
+  [tabindex="-1"]:focus {
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Malayalam glyphs are taller and carry stacked conjuncts. These selectors out-rank the
+     single-class type utilities, so Malayalam gets roomier leading and no negative tracking. */
+  :lang(ml) .text-display {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+
+  :lang(ml) .text-title {
+    line-height: 1.5;
+  }
+
+  :lang(ml) .text-body,
+  :lang(ml) .text-small,
+  :lang(ml) .text-meta {
+    line-height: 1.65;
+  }
+
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}

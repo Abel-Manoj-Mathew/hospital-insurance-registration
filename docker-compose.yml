@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hospital_intake_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hospital}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hospital}
+      POSTGRES_DB: ${POSTGRES_DB:-hospital_intake}
+    ports:
+      - '${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - hospital_intake_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-hospital}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+    container_name: hospital_intake_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hospital}:${POSTGRES_PASSWORD:-hospital}@postgres:5432/${POSTGRES_DB:-hospital_intake}?schema=public
+      PORT: 4000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    ports:
+      - '${API_PORT:-4000}:4000'
+
+  web:
+    build:
+      context: .
+    container_name: hospital_intake_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # A real public domain here gets Caddy to auto-issue a Let's Encrypt cert.
+      # localhost / a bare LAN IP makes Caddy fall back to its internal self-signed CA.
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - hospital_intake_caddy_data:/data
+      - hospital_intake_caddy_config:/config
+
+volumes:
+  hospital_intake_pgdata:
+  hospital_intake_caddy_data:
+  hospital_intake_caddy_config:
