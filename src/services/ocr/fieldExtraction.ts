@@ -8,6 +8,8 @@ export interface FieldExtractionResult {
 }
 
 const DATE_PATTERN = /\b(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4})\b/
+// Some Aadhaar cards print only "Year of Birth: 1985" instead of a full date.
+const YEAR_OF_BIRTH_PATTERN = /\b(?:YEAR\s+OF\s+BIRTH|YOB)\b\D{0,12}((?:19|20)\d{2})\b/i
 // [ \t] rather than \s so a match can't span lines and glue a year onto the next line's digits.
 const AADHAAR_PATTERN = /(?<!\d)(\d{4}[ \t]?\d{4}[ \t]?\d{4})(?!\d)/g
 const LAB_REPORT_KEYWORD_PATTERN = /\b(?:report|laborator(?:y|ies)|diagnostics?|pathology|specimen|sample)\b/i
@@ -70,7 +72,7 @@ function cleanNameLine(line: string): string {
 
 function isPlausibleName(candidate: string): boolean {
   const words = candidate.split(' ').filter((word) => word.length > 1)
-  return candidate.length >= 3 && words.length >= 1 && !/GOVERNMENT|INDIA|AADHAAR|MALE|FEMALE|BIRTH|DOB|UNIQUE|AUTHORITY/i.test(candidate)
+  return candidate.length >= 3 && words.length >= 1 && !/GOVERNMENT|INDIA|AADHAAR|MALE|FEMALE|BIRTH|DOB|UNIQUE|AUTHORITY|MOTHER|FATHER|HUSBAND|WIFE|GUARDIAN/i.test(candidate)
 }
 
 /**
@@ -199,7 +201,7 @@ export function extractFieldsForDocument(documentType: DocumentTypeId, ocrText: 
     case 'aadhaar': {
       const aadhaarNumber = matchAadhaarNumber(ocrText)
       const name = matchAadhaarName(ocrText)
-      const dob = DATE_PATTERN.exec(ocrText)?.[1]
+      const dob = DATE_PATTERN.exec(ocrText)?.[1] ?? YEAR_OF_BIRTH_PATTERN.exec(ocrText)?.[1]
       const address = matchAddress(ocrText)
       fields.push(
         ...([
