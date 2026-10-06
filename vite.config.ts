@@ -9,6 +9,12 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // Lets the app be opened through an HTTPS tunnel (needed for camera access on a phone) with
+    // the API reached on the same origin, so no CORS or mixed-content issues.
+    allowedHosts: ['.trycloudflare.com'],
+    proxy: { '/api': 'http://localhost:4000' },
+  },
   resolve: {
     alias: {
       '@': path.resolve(dirname, './src'),

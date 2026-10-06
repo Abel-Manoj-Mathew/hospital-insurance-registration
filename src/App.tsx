@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useSessionStore } from '@/state/sessionStore'
 import { WelcomePage } from '@/pages/WelcomePage'
 import { LanguagePage } from '@/pages/LanguagePage'
+import { ContactInfoPage } from '@/pages/ContactInfoPage'
 import { DocumentsPage } from '@/pages/DocumentsPage'
 import { DocumentCapturePage } from '@/pages/DocumentCapturePage'
 import { DocumentProcessingPage } from '@/pages/DocumentProcessingPage'
@@ -28,6 +29,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/welcome" replace />} />
       <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/language" element={<LanguagePage />} />
+      <Route path="/contact" element={<ContactInfoPage />} />
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/documents/:documentType" element={<DocumentCapturePage />} />
       <Route path="/documents/:documentType/processing" element={<DocumentProcessingPage />} />

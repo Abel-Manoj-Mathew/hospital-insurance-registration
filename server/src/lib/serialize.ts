@@ -41,6 +41,8 @@ export function serializeSession(session: SessionWithRelations) {
     sessionId: session.id,
     createdAt: session.createdAt.toISOString(),
     language: session.language ?? null,
+    contactPhone: session.contactPhone ?? null,
+    contactRelation: session.contactRelation ?? null,
     documents,
     bedPreferences,
     bedPreferencesConfirmed: session.bedPreferencesConfirmed,

@@ -1,7 +1,7 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useSessionStore } from '@/state/sessionStore'
-import { requiredDocumentsSatisfied } from '@/utils/workflow'
+import { contactInfoComplete, requiredDocumentsSatisfied } from '@/utils/workflow'
 import type { CaptureMethod, DocumentTypeId } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -13,9 +13,14 @@ export function DocumentsPage() {
   const navigate = useNavigate()
   const documents = useSessionStore((state) => state.documents)
   const language = useSessionStore((state) => state.language)
+  const contactPhone = useSessionStore((state) => state.contactPhone)
+  const contactRelation = useSessionStore((state) => state.contactRelation)
 
   if (!language) {
     return <Navigate to="/language" replace />
+  }
+  if (!contactInfoComplete({ contactPhone, contactRelation })) {
+    return <Navigate to="/contact" replace />
   }
 
   const isComplete = requiredDocumentsSatisfied(documents)
@@ -27,8 +32,8 @@ export function DocumentsPage() {
   return (
     <AppShell
       title={t('documents.title')}
-      step={2}
-      onBack={() => navigate('/language')}
+      step={3}
+      onBack={() => navigate('/contact')}
       footer={
         <>
           {!isComplete && (

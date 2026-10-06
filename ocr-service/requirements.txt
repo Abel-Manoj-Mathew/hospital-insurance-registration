@@ -1,0 +1,6 @@
+paddlepaddle
+paddleocr
+fastapi
+uvicorn[standard]
+opencv-python-headless
+pillow

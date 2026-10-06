@@ -2,9 +2,15 @@ import { Check } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { cn } from '@/utils/cn'
 
-export type ProgressStep = 1 | 2 | 3 | 4
+export type ProgressStep = 1 | 2 | 3 | 4 | 5
 
-const STEP_KEYS = ['progress.language', 'progress.documents', 'progress.preferences', 'progress.review'] as const
+const STEP_KEYS = [
+  'progress.language',
+  'progress.contact',
+  'progress.documents',
+  'progress.preferences',
+  'progress.review',
+] as const
 
 interface ProgressIndicatorProps {
   currentStep: ProgressStep
@@ -19,7 +25,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
       <p className="text-meta font-medium text-ink-600" aria-hidden="true">
         {t('progress.stepLabel', { current: currentStep, total })}
       </p>
-      <ol className="mt-2 grid grid-cols-4 gap-1.5 sm:gap-2">
+      <ol className="mt-2 grid grid-cols-5 gap-1.5 sm:gap-2">
         {STEP_KEYS.map((key, index) => {
           const step = index + 1
           const isComplete = step < currentStep

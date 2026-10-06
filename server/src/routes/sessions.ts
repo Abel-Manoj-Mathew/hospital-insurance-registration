@@ -43,6 +43,8 @@ sessionsRouter.get(
 
 const patchSessionSchema = z.object({
   language: z.enum(['en', 'ml']).optional(),
+  contactPhone: z.string().min(1).optional(),
+  contactRelation: z.enum(['self', 'spouse', 'parent', 'child', 'sibling', 'relative', 'other']).optional(),
 })
 
 sessionsRouter.patch(

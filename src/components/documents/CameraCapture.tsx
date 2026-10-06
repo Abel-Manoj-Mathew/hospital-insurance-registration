@@ -63,7 +63,13 @@ export function CameraCapture({ ref, frame, attempt, onReadyChange, onError }: C
     onReadyChange(false)
 
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+      // Without a size hint phones hand back a 640x480 stream (~400px wide after the card crop). The
+      // Aadhaar QR is ~150 modules across and needs ~5px per module, so the card must be ~2000px wide. These are only preferences,
+      // so a lower-end camera falls back to its best available size.
+      .getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: false,
+      })
       .then(async (stream) => {
         // Effects re-run under StrictMode; release a stream that arrives after this run was torn down.
         if (cancelled) {

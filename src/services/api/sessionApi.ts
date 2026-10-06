@@ -1,4 +1,4 @@
-import type { BedPreferenceRecord, DocumentRecord, DocumentTypeId, LanguageCode } from '@/types'
+import type { BedPreferenceRecord, DocumentRecord, DocumentTypeId, LanguageCode, RelationToPatient } from '@/types'
 import { apiRequest } from './httpClient'
 
 export async function registerSession(sessionId: string): Promise<void> {
@@ -12,6 +12,17 @@ export async function syncSessionLanguage(sessionId: string, language: LanguageC
   await apiRequest(`/api/sessions/${sessionId}`, {
     method: 'PATCH',
     body: JSON.stringify({ language }),
+  })
+}
+
+export async function syncContactInfo(
+  sessionId: string,
+  contactPhone: string,
+  contactRelation: RelationToPatient,
+): Promise<void> {
+  await apiRequest(`/api/sessions/${sessionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ contactPhone, contactRelation }),
   })
 }
 

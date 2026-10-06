@@ -13,6 +13,13 @@ export interface DocumentMeta {
   captureFrame: CaptureFrame
   allowCamera: boolean
   allowUpload: boolean
+  /** Needs both a front and a back capture (e.g. Aadhaar, whose address is on the back). */
+  requiresBackSide?: boolean
+  /**
+   * The fields this document always shows on the Review page, in order — even when OCR didn't find
+   * one, so staff can see it's missing and the patient can fill it in by hand.
+   */
+  reviewFieldKeys?: string[]
 }
 
 export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
@@ -25,6 +32,7 @@ export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
     captureFrame: 'card',
     allowCamera: true,
     allowUpload: true,
+    reviewFieldKeys: ['fields.patientName', 'fields.hospitalIdNumber'],
   },
   {
     id: 'aadhaar',
@@ -35,6 +43,8 @@ export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
     captureFrame: 'card',
     allowCamera: true,
     allowUpload: true,
+    requiresBackSide: true,
+    reviewFieldKeys: ['fields.aadhaarName', 'fields.dateOfBirth', 'fields.address', 'fields.aadhaarNumber'],
   },
   {
     id: 'insuranceCard',
@@ -45,6 +55,7 @@ export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
     captureFrame: 'card',
     allowCamera: true,
     allowUpload: true,
+    reviewFieldKeys: ['fields.insuranceName', 'fields.memberId'],
   },
   {
     id: 'policyDocument',

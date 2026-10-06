@@ -1,7 +1,7 @@
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useSessionStore } from '@/state/sessionStore'
-import { requiredDocumentsSatisfied } from '@/utils/workflow'
+import { contactInfoComplete, requiredDocumentsSatisfied } from '@/utils/workflow'
 import { syncBedPreferences } from '@/services/api/sessionApi'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -14,6 +14,8 @@ export function BedPreferencePage() {
   const navigate = useNavigate()
   const sessionId = useSessionStore((state) => state.sessionId)
   const language = useSessionStore((state) => state.language)
+  const contactPhone = useSessionStore((state) => state.contactPhone)
+  const contactRelation = useSessionStore((state) => state.contactRelation)
   const documents = useSessionStore((state) => state.documents)
   const bedPreferences = useSessionStore((state) => state.bedPreferences)
   const confirmBedPreferences = useSessionStore((state) => state.confirmBedPreferences)
@@ -25,6 +27,7 @@ export function BedPreferencePage() {
 
   if (!devBypass) {
     if (!language) return <Navigate to="/language" replace />
+    if (!contactInfoComplete({ contactPhone, contactRelation })) return <Navigate to="/contact" replace />
     if (!requiredDocumentsSatisfied(documents)) return <Navigate to="/documents" replace />
   }
 
@@ -39,7 +42,7 @@ export function BedPreferencePage() {
   return (
     <AppShell
       title={t('bedPreference.title')}
-      step={3}
+      step={4}
       onBack={() => navigate('/documents')}
       footer={<PrimaryButton onClick={handleContinue}>{t('bedPreference.continueButton')}</PrimaryButton>}
     >

@@ -1,5 +1,7 @@
 export type LanguageCode = 'en' | 'ml'
 
+export type RelationToPatient = 'self' | 'spouse' | 'parent' | 'child' | 'sibling' | 'relative' | 'other'
+
 export type DocumentTypeId =
   | 'hospitalId'
   | 'aadhaar'
@@ -17,6 +19,16 @@ export interface CapturedFile {
   mimeType: string
   captureMethod: CaptureMethod
   fileName?: string
+}
+
+export type DocumentSide = 'front' | 'back'
+
+/** The OCR'd front side of a two-sided document, carried forward while the back side is captured. */
+export interface CapturedSideResult {
+  dataUrl: string
+  captureMethod: CaptureMethod
+  ocrText: string
+  confidence: number
 }
 
 export type DocumentStatus =
@@ -67,6 +79,8 @@ export interface SessionState {
   sessionId: string | null
   createdAt: string | null
   language: LanguageCode | null
+  contactPhone: string | null
+  contactRelation: RelationToPatient | null
   documents: Record<DocumentTypeId, DocumentRecord>
   bedPreferences: BedPreferenceRecord[]
   submissionStatus: SubmissionStatus

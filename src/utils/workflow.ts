@@ -1,5 +1,5 @@
 import { REQUIRED_DOCUMENT_IDS } from '@/utils/documentMeta'
-import type { DocumentRecord, DocumentTypeId, LanguageCode, SubmissionStatus } from '@/types'
+import type { DocumentRecord, DocumentTypeId, LanguageCode, RelationToPatient, SubmissionStatus } from '@/types'
 
 const SATISFIED_STATUSES = new Set(['accepted', 'review_required'])
 
@@ -17,19 +17,30 @@ export function countSatisfiedRequired(documents: Record<DocumentTypeId, Documen
 
 interface ResumeContext {
   language: LanguageCode | null
+  contactPhone: string | null
+  contactRelation: RelationToPatient | null
   documents: Record<DocumentTypeId, DocumentRecord>
   bedPreferencesConfirmed: boolean
   submissionStatus: SubmissionStatus
 }
 
+export function contactInfoComplete(ctx: Pick<ResumeContext, 'contactPhone' | 'contactRelation'>): boolean {
+  return !!ctx.contactPhone && !!ctx.contactRelation
+}
+
 export function getResumeTarget(ctx: ResumeContext): string {
   if (ctx.submissionStatus === 'submitted') return '/success'
   if (!ctx.language) return '/language'
+  if (!contactInfoComplete(ctx)) return '/contact'
   if (!requiredDocumentsSatisfied(ctx.documents)) return '/documents'
   if (!ctx.bedPreferencesConfirmed) return '/preferences'
   return '/review'
 }
 
 export function hasSessionProgress(ctx: ResumeContext): boolean {
-  return ctx.language !== null || ctx.submissionStatus !== 'idle' || Object.values(ctx.documents).some((d) => d.status !== 'not_uploaded')
+  return (
+    ctx.language !== null ||
+    ctx.submissionStatus !== 'idle' ||
+    Object.values(ctx.documents).some((d) => d.status !== 'not_uploaded')
+  )
 }

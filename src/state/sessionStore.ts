@@ -8,6 +8,7 @@ import type {
   DocumentRecord,
   DocumentTypeId,
   LanguageCode,
+  RelationToPatient,
   SubmissionResult,
   SubmissionStatus,
 } from '@/types'
@@ -37,6 +38,8 @@ interface SessionStore {
   sessionId: string | null
   createdAt: string | null
   language: LanguageCode | null
+  contactPhone: string | null
+  contactRelation: RelationToPatient | null
   documents: Record<DocumentTypeId, DocumentRecord>
   bedPreferences: BedPreferenceRecord[]
   bedPreferencesConfirmed: boolean
@@ -45,6 +48,7 @@ interface SessionStore {
 
   startOrResumeSession: () => { resumed: boolean }
   setLanguage: (language: LanguageCode) => void
+  setContactInfo: (phone: string, relation: RelationToPatient) => void
   setDocumentProcessing: (documentType: DocumentTypeId) => void
   setDocumentResult: (documentType: DocumentTypeId, patch: Partial<DocumentRecord>) => void
   clearDocument: (documentType: DocumentTypeId) => void
@@ -59,6 +63,8 @@ const initialState = {
   sessionId: null as string | null,
   createdAt: null as string | null,
   language: null as LanguageCode | null,
+  contactPhone: null as string | null,
+  contactRelation: null as RelationToPatient | null,
   documents: createDefaultDocuments(),
   bedPreferences: createDefaultBedPreferences(),
   bedPreferencesConfirmed: false,
@@ -84,6 +90,8 @@ export const useSessionStore = create<SessionStore>()(
       },
 
       setLanguage: (language) => set({ language }),
+
+      setContactInfo: (phone, relation) => set({ contactPhone: phone, contactRelation: relation }),
 
       setDocumentProcessing: (documentType) =>
         set((state) => ({

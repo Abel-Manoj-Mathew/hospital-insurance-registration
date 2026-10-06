@@ -41,6 +41,16 @@ enum BedPreferenceId {
   superDeluxe
 }
 
+enum RelationToPatient {
+  self
+  spouse
+  parent
+  child
+  sibling
+  relative
+  other
+}
+
 enum SubmissionStatus {
   idle
   submitting
@@ -53,6 +63,8 @@ model Session {
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
   language                LanguageCode?
+  contactPhone            String?
+  contactRelation         RelationToPatient?
   bedPreferencesConfirmed Boolean          @default(false)
   submissionStatus        SubmissionStatus @default(idle)
   submissionReferenceId   String?

@@ -19,6 +19,8 @@ export function WelcomePage() {
   const resetSession = useSessionStore((state) => state.resetSession)
   const sessionId = useSessionStore((state) => state.sessionId)
   const language = useSessionStore((state) => state.language)
+  const contactPhone = useSessionStore((state) => state.contactPhone)
+  const contactRelation = useSessionStore((state) => state.contactRelation)
   const documents = useSessionStore((state) => state.documents)
   const bedPreferencesConfirmed = useSessionStore((state) => state.bedPreferencesConfirmed)
   const submissionStatus = useSessionStore((state) => state.submissionStatus)
@@ -34,12 +36,14 @@ export function WelcomePage() {
 
   const resuming =
     submissionStatus !== 'submitted' &&
-    hasSessionProgress({ language, documents, bedPreferencesConfirmed, submissionStatus })
+    hasSessionProgress({ language, contactPhone, contactRelation, documents, bedPreferencesConfirmed, submissionStatus })
 
   const requiredAdded = REQUIRED_DOCUMENTS.filter((doc) => isDocumentSatisfied(documents[doc.id])).length
 
   const handleContinue = () => {
-    navigate(getResumeTarget({ language, documents, bedPreferencesConfirmed, submissionStatus }))
+    navigate(
+      getResumeTarget({ language, contactPhone, contactRelation, documents, bedPreferencesConfirmed, submissionStatus }),
+    )
   }
 
   const handleStartNew = () => {
@@ -73,6 +77,11 @@ export function WelcomePage() {
                   label: t('progress.language'),
                   done: Boolean(language),
                   value: language === 'ml' ? 'മലയാളം' : language === 'en' ? 'English' : t('welcome.stepNotYet'),
+                },
+                {
+                  label: t('progress.contact'),
+                  done: Boolean(contactPhone && contactRelation),
+                  value: contactPhone && contactRelation ? t('welcome.stepDone') : t('welcome.stepNotYet'),
                 },
                 {
                   label: t('progress.documents'),

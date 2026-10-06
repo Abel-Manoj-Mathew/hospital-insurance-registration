@@ -25,7 +25,7 @@ export function LanguagePage() {
     if (sessionId) {
       syncSessionLanguage(sessionId, selected).catch(() => console.warn('Language sync failed'))
     }
-    navigate('/documents')
+    navigate('/contact')
   }
 
   return (

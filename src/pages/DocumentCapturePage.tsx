@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Camera, CameraOff, FileUp } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useSessionStore } from '@/state/sessionStore'
 import { DOCUMENT_META_BY_ID } from '@/utils/documentMeta'
-import type { CaptureMethod, CapturedFile, DocumentTypeId } from '@/types'
+import type { CaptureMethod, CapturedFile, CapturedSideResult, DocumentTypeId } from '@/types'
 import { AppShell } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PrimaryButton } from '@/components/common/PrimaryButton'
@@ -26,6 +26,7 @@ function parseMode(value: string | null): Mode {
 export function DocumentCapturePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const { documentType } = useParams<{ documentType: string }>()
   const [searchParams] = useSearchParams()
   const language = useSessionStore((state) => state.language)
@@ -44,7 +45,14 @@ export function DocumentCapturePage() {
   if (!documentType || !(documentType in DOCUMENT_META_BY_ID)) return <Navigate to="/documents" replace />
 
   const meta = DOCUMENT_META_BY_ID[documentType as DocumentTypeId]
+  const isBackSide = Boolean(meta.requiresBackSide) && searchParams.get('side') === 'back'
+  const frontSideResult = (location.state as { front?: CapturedSideResult } | null)?.front
+
+  // Lost the front side's OCR text (e.g. a refresh mid-flow) — start the two-side capture over.
+  if (isBackSide && !frontSideResult) return <Navigate to={`/documents/${documentType}`} replace />
+
   const title = t(meta.titleKey)
+  const pageTitle = meta.requiresBackSide ? `${title} — ${t(isBackSide ? 'capture.backSideLabel' : 'capture.frontSideLabel')}` : title
   const isOptional = meta.requirement === 'optional'
   const canSkip = isOptional && (!record || record.status === 'not_uploaded')
 
@@ -61,7 +69,14 @@ export function DocumentCapturePage() {
   const handleRetake = () => setCaptured(null)
 
   const handleConfirm = () => {
-    if (captured) navigate(`/documents/${documentType}/processing`, { state: { file: captured } })
+    if (!captured) return
+    if (meta.requiresBackSide) {
+      navigate(`/documents/${documentType}/processing`, {
+        state: isBackSide ? { file: captured, side: 'back', front: frontSideResult } : { file: captured, side: 'front' },
+      })
+    } else {
+      navigate(`/documents/${documentType}/processing`, { state: { file: captured } })
+    }
   }
 
   const skipButton = canSkip ? (
@@ -90,8 +105,12 @@ export function DocumentCapturePage() {
   }
 
   return (
-    <AppShell title={title} onBack={() => navigate('/documents')} footer={footer}>
-      <PageHeader title={title} description={t(meta.descriptionKey)} className="mb-5" />
+    <AppShell title={pageTitle} onBack={() => navigate('/documents')} footer={footer}>
+      <PageHeader title={pageTitle} description={t(meta.descriptionKey)} className="mb-5" />
+
+      {meta.requiresBackSide && !captured && mode !== 'camera' && (
+        <Notice className="mb-6">{t(isBackSide ? 'capture.backSideNotice' : 'capture.frontSideNotice')}</Notice>
+      )}
 
       {isOptional && !captured && mode !== 'camera' && (
         <Notice className="mb-6">{t('capture.optionalNotice')}</Notice>
