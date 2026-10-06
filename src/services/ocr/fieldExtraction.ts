@@ -1,5 +1,4 @@
 import type { DocumentTypeId, ExtractedField } from '@/types'
-import { AADHAAR_QR_PREFIX, extractQrLine } from '@/services/ocr/aadhaarQr'
 import { isValidAadhaarNumber } from '@/utils/verhoeff'
 
 export interface FieldExtractionResult {
@@ -64,28 +63,6 @@ function matchName(text: string): string | undefined {
   return match[1].trim().split(/\s{2,}/)[0]
 }
 
-const INSTITUTION_WORDS =
-  /\b(?:CITY|MEDICAL|CENTER|CENTRE|HOSPITAL|EMERGENCY|ROOM|GOVERNMENT|DEPARTMENT|INFORMATION|DESK|SECURITY|VERIFIED|WARD|PRIMARY|GENERAL|PATIENT|IF|FOUND|PLEASE|RETURN|CARD|IDENTITY|INSURANCE|HEALTH|CLINIC|DATE|ADMISSION|GENDER|MALE|FEMALE|OF|BIRTH|DOB|ID|NO)\b/i
-
-/** A line that looks like a person's name: 2–4 alphabetic words (initials allowed), no institution/label words. */
-function isPersonNameLine(line: string): boolean {
-  const cleaned = line.trim()
-  if (!/^[A-Za-z][A-Za-z.' ]{3,40}$/.test(cleaned) || INSTITUTION_WORDS.test(cleaned)) return false
-  const words = cleaned.split(/\s+/)
-  return words.length >= 2 && words.length <= 4 && words.some((word) => word.replace(/\./g, '').length > 2)
-}
-
-/**
- * Cards without a "Name:" label (e.g. hospital patient IDs) print the name on its own line next to the
- * ID/DOB lines. Prefers the nearest name-like line above the first of those anchor lines.
- */
-function matchUnlabelledName(text: string): string | undefined {
-  const lines = text.split(/\r?\n/)
-  const anchor = lines.findIndex((line) => /\b(?:PATIENT\s*ID|ID\s*(?:NO|NUMBER)|UHID|MRN|DOB|DATE\s+OF\s+BIRTH)\b/i.test(line))
-  const above = anchor > 0 ? lines.slice(0, anchor).reverse() : []
-  return [...above, ...lines].find(isPersonNameLine)?.trim()
-}
-
 /** Keeps only Latin letters and name punctuation; OCR of bilingual cards adds Malayalam/Hindi glyphs and symbols. */
 function cleanNameLine(line: string): string {
   return line.replace(/[^A-Za-z.\s]/g, ' ').replace(/\s{2,}/g, ' ').trim()
@@ -119,8 +96,8 @@ function isAddressToken(token: string): boolean {
   if (SHORT_ADDRESS_WORDS.has(core.toUpperCase())) return true
   // Lone digits and 1–2 letter fragments ("NG", "AE", "of", "4") are QR/scan noise; real house
   // numbers have 2+ digits or a slash ("12/34").
+  if (/^(?:\d{2,6}|\d{1,6}[A-Za-z])([/-]\w+)*$/.test(core)) return true
   if (core.length <= 2) return false
-  if (/^\d{2,6}([/-]\w+)*$/.test(core)) return true
   const wordChars = core.replace(/[^A-Za-z0-9]/g, '').length
   if (wordChars / core.length < 0.8) return false
   if (core.length > 3 && /[A-Za-z]/.test(core) && !/[AEIOUYaeiouy]/.test(core)) return false
@@ -144,30 +121,58 @@ function cleanAddressTokens(raw: string): string {
 }
 
 /**
+ * Drops the "S/O: <parent or spouse name>," lead-in (S/O, D/O, W/O, C/O, "Son of" …) so only the
+ * actual address remains. The name runs up to the first comma; if there is none, only the marker goes.
+ * `markerAlreadyConsumed` is true when the caller started the text right after the marker.
+ */
+function removeParentReference(body: string, markerAlreadyConsumed: boolean): string {
+  const marker = /^\s*(?:[CSDW5]\s?[/|]\s?[O0]|(?:Son|Daughter|Wife|Husband|Care)\s+of)\s*[:;.]?\s*/i
+  const hasMarker = markerAlreadyConsumed || marker.test(body)
+  const withoutMarker = markerAlreadyConsumed ? body : body.replace(marker, '')
+  if (!hasMarker) return body
+  const name = /^[^,]{1,60},\s*/.exec(withoutMarker)
+  return name ? withoutMarker.slice(name[0].length) : withoutMarker
+}
+
+/**
+ * Fallback for when OCR garbles the "Address:" / "S/O" lead-in: anchors on the 6-digit PIN line and
+ * collects the consecutive comma-separated lines above it (address lines always carry commas, while
+ * the garbled label and the QR-area noise above them do not).
+ */
+function addressBeforePin(text: string): string | undefined {
+  const lines = text.split(/\r?\n/).map((line) => line.trim())
+  // Lines of 4-digit groups are Aadhaar/VID numbers; the PIN is a standalone 6-digit group.
+  const pinLine = lines.findIndex((line) => /[A-Za-z]/.test(line) && /(?<!\d)\d{3}\s?\d{3}(?![\d\s]*\d)/.test(line) && !/uidai|help|www|box/i.test(line))
+  if (pinLine < 1) return undefined
+  const collected = [lines[pinLine]]
+  for (let i = pinLine - 1; i >= 0 && collected.length < 6; i--) {
+    if (!lines[i].includes(',') || /uidai|help@|www/i.test(lines[i])) break
+    collected.unshift(lines[i])
+  }
+  return collected.length > 1 ? collected.join(' ') : undefined
+}
+
+/**
  * Aadhaar's back side prints the address as "S/O: Name, House, Place, District, State - PIN" (OCR often
  * misreads the "S/O" as "5/0" or "Fgh 5/0", and may lose the "Address" label), ending at the 6-digit PIN.
  */
 function matchAddress(text: string): string | undefined {
-  // The appended QR payload is not card text and must never leak into the address.
-  const flat = text
-    .split(/\r?\n/)
-    .filter((line) => !line.startsWith(AADHAAR_QR_PREFIX))
-    .join(' ')
+  const flat = text.replace(/\r?\n/g, ' ')
   const relation = /\b([CSDW5])\s?[/|]\s?[O0]\b\s*[:;.]?\s*/i.exec(flat)
-  const label = /ADD?RESS\s*[:;.\-]?\s*/i.exec(flat)
+  const label = /ADD?RESS\s*[:;.-]?\s*/i.exec(flat)
   const start = label ?? relation
-  if (!start) return undefined
-  const body = /^(.{10,250}?\b\d{3}\s?\d{3})(?!\d)/.exec(flat.slice(start.index + start[0].length))?.[1]
-  if (!body) return undefined
-  const cleaned = cleanAddressTokens(body.replace(/[^\x20-\x7E]+/g, ' '))
+  const labelled = start
+    ? /^(.{10,250}?\b\d{3}\s?\d{3})(?!\d)/.exec(flat.slice(start.index + start[0].length))?.[1]
+    : undefined
+  const rawBody = labelled ?? addressBeforePin(text)
+  if (!rawBody) return undefined
+  const body = removeParentReference(rawBody, labelled !== undefined && start === relation)
+  return cleanAddressTokens(body.replace(/[^\x20-\x7E]+/g, ' '))
     .replace(/\s*,\s*/g, ', ')
     .replace(/,\s*-/g, ' -')
     .replace(/\s{2,}/g, ' ')
     .replace(/^[,\s]+/, '')
     .trim()
-  // Re-attach the relation prefix when the address started at "S/O" rather than at an "Address" label.
-  const prefix = !label && relation ? `${relation[1].toUpperCase().replace('5', 'S')}/O: ` : ''
-  return `${prefix}${cleaned}`
 }
 
 /** Prefers a 12-digit number that passes the Aadhaar checksum; falls back to the first candidate, unverified. */
@@ -191,20 +196,11 @@ export function extractFieldsForDocument(documentType: DocumentTypeId, ocrText: 
   let primaryFieldFound = false
 
   switch (documentType) {
-    case 'hospitalId': {
-      const idNumber = matchLabelled(ocrText, '(?:ID|NO|NUMBER)')
-      const name = matchName(ocrText) ?? matchUnlabelledName(ocrText)
-      fields.push(...([field('fields.patientName', name), field('fields.hospitalIdNumber', idNumber)].filter(Boolean) as ExtractedField[]))
-      primaryFieldFound = Boolean(idNumber)
-      break
-    }
     case 'aadhaar': {
-      // The card's QR code carries the exact name/DOB/address, so it beats OCR whenever it was readable.
-      const qr = extractQrLine(ocrText)
       const aadhaarNumber = matchAadhaarNumber(ocrText)
-      const name = qr?.name ?? matchAadhaarName(ocrText)
-      const dob = qr?.dateOfBirth ?? DATE_PATTERN.exec(ocrText)?.[1]
-      const address = qr?.address ?? matchAddress(ocrText)
+      const name = matchAadhaarName(ocrText)
+      const dob = DATE_PATTERN.exec(ocrText)?.[1]
+      const address = matchAddress(ocrText)
       fields.push(
         ...([
           field('fields.aadhaarName', name),

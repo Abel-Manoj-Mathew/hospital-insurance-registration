@@ -47,7 +47,7 @@ export function ReviewPage() {
   const [editingDetails, setEditingDetails] = useState(false)
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
 
-  // Only the identity documents (hospitalId, aadhaar, insuranceCard) get a fixed field list so the
+  // Only the identity documents (aadhaar, insuranceCard) get a fixed field list so the
   // section stays visible — with blanks the patient can fill in — even when OCR found nothing.
   const detailDocuments = useMemo(
     () => DOCUMENT_CHECKLIST.filter((meta) => meta.reviewFieldKeys || (documents[meta.id]?.extractedFields?.length ?? 0) > 0),

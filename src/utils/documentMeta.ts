@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { CreditCard, FileText, Fingerprint, FlaskConical, IdCard } from 'lucide-react'
+import { CreditCard, FileText, Fingerprint, FlaskConical } from 'lucide-react'
 import type { DocumentRequirement, DocumentTypeId } from '@/types'
 
 export type CaptureFrame = 'card' | 'page'
@@ -23,17 +23,6 @@ export interface DocumentMeta {
 }
 
 export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
-  {
-    id: 'hospitalId',
-    requirement: 'required',
-    icon: IdCard,
-    titleKey: 'documents.items.hospitalId.title',
-    descriptionKey: 'documents.items.hospitalId.description',
-    captureFrame: 'card',
-    allowCamera: true,
-    allowUpload: true,
-    reviewFieldKeys: ['fields.patientName', 'fields.hospitalIdNumber'],
-  },
   {
     id: 'aadhaar',
     requirement: 'required',
@@ -87,7 +76,7 @@ export const REQUIRED_DOCUMENTS: DocumentMeta[] = DOCUMENT_CHECKLIST.filter((doc
 export const OPTIONAL_DOCUMENTS: DocumentMeta[] = DOCUMENT_CHECKLIST.filter((doc) => doc.requirement === 'optional')
 
 // TEMP: not enforced while testing on a phone without these documents. Empty this set before release.
-const TEMP_UNENFORCED_REQUIRED_IDS = new Set<DocumentTypeId>(['hospitalId', 'insuranceCard'])
+const TEMP_UNENFORCED_REQUIRED_IDS = new Set<DocumentTypeId>(['insuranceCard'])
 
 export const REQUIRED_DOCUMENT_IDS: DocumentTypeId[] = REQUIRED_DOCUMENTS.map((doc) => doc.id).filter(
   (id) => !TEMP_UNENFORCED_REQUIRED_IDS.has(id),

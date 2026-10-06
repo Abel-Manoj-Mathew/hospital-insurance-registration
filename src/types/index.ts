@@ -3,7 +3,6 @@ export type LanguageCode = 'en' | 'ml'
 export type RelationToPatient = 'self' | 'spouse' | 'parent' | 'child' | 'sibling' | 'relative' | 'other'
 
 export type DocumentTypeId =
-  | 'hospitalId'
   | 'aadhaar'
   | 'insuranceCard'
   | 'policyDocument'

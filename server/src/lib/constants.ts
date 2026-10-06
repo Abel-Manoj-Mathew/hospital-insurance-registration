@@ -1,5 +1,4 @@
 export const DOCUMENT_TYPE_IDS = [
-  'hospitalId',
   'aadhaar',
   'insuranceCard',
   'policyDocument',
@@ -9,7 +8,6 @@ export const DOCUMENT_TYPE_IDS = [
 export type DocumentTypeId = (typeof DOCUMENT_TYPE_IDS)[number]
 
 export const REQUIRED_DOCUMENT_TYPE_IDS: readonly DocumentTypeId[] = [
-  'hospitalId',
   'aadhaar',
   'insuranceCard',
 ]

@@ -13,7 +13,6 @@ enum LanguageCode {
 }
 
 enum DocumentTypeId {
-  hospitalId
   aadhaar
   insuranceCard
   policyDocument

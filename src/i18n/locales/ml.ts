@@ -87,10 +87,6 @@ export const ml = {
       failed: 'പരിശോധിക്കാൻ കഴിഞ്ഞില്ല',
     },
     items: {
-      hospitalId: {
-        title: 'ഹോസ്പിറ്റൽ ഐഡി',
-        description: 'നിങ്ങളുടെ ആശുപത്രി രജിസ്ട്രേഷൻ അല്ലെങ്കിൽ പേഷ്യന്റ് ഐഡി കാർഡ്.',
-      },
       aadhaar: {
         title: 'ആധാർ',
         description: 'നിങ്ങളുടെ ആധാർ തിരിച്ചറിയൽ കാർഡ്.',
@@ -265,7 +261,6 @@ export const ml = {
     aadhaarName: 'ആധാറിലെ പേര്',
     insuranceName: 'ഇൻഷുറൻസ് കാർഡിലെ പേര്',
     dateOfBirth: 'ജനന തീയതി',
-    hospitalIdNumber: 'ഹോസ്പിറ്റൽ ഐഡി നമ്പർ',
     aadhaarNumber: 'ആധാർ നമ്പർ',
     insurerName: 'ഇൻഷുറർ',
     policyNumber: 'പോളിസി നമ്പർ',

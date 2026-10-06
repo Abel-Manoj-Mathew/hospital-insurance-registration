@@ -84,10 +84,6 @@ export const en = {
       failed: 'Couldn’t be checked',
     },
     items: {
-      hospitalId: {
-        title: 'Hospital ID',
-        description: 'Your hospital registration or patient ID card.',
-      },
       aadhaar: {
         title: 'Aadhaar',
         description: 'Your Aadhaar identity card.',
@@ -261,7 +257,6 @@ export const en = {
     aadhaarName: 'Name on Aadhaar',
     insuranceName: 'Name on insurance card',
     dateOfBirth: 'Date of birth',
-    hospitalIdNumber: 'Hospital ID number',
     aadhaarNumber: 'Aadhaar number',
     insurerName: 'Insurer',
     policyNumber: 'Policy number',
