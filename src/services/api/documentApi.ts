@@ -1,7 +1,6 @@
 import type { DocumentRejection, DocumentStatus, DocumentTypeId, ExtractedField } from '@/types'
 import { recognizeDigitsOnly, recognizeDocumentText, type OcrLayout } from '@/services/ocr/ocrEngine'
 import { extractFieldsForDocument, hasVerifiedAadhaarNumber } from '@/services/ocr/fieldExtraction'
-import { decodeAadhaarQr, encodeQrLine } from '@/services/ocr/aadhaarQr'
 import { DOCUMENT_META_BY_ID } from '@/utils/documentMeta'
 import { hashString } from '@/services/mock/prng'
 
@@ -46,20 +45,14 @@ type SideOcrOutcome =
   | { status: 'failed' }
 
 /**
- * Adds Aadhaar-specific evidence to the OCR text: the card's QR payload (exact name/DOB/address), and,
- * if no checksum-valid 12-digit number was read, a digits-only re-read of the image.
+ * If the general OCR pass didn't read a checksum-valid 12-digit Aadhaar number, re-reads the image
+ * with a digits-only alphabet and appends the result.
  */
 async function enrichAadhaarText(text: string, dataUrl: string): Promise<string> {
-  let enriched = text
-  const qr = await decodeAadhaarQr(dataUrl)
-  if (qr) enriched += `
-${encodeQrLine(qr)}`
-  if (!hasVerifiedAadhaarNumber(enriched)) {
-    const digits = await recognizeDigitsOnly(dataUrl)
-    if (digits.trim()) enriched += `
-${digits}`
-  }
-  return enriched
+  if (hasVerifiedAadhaarNumber(text)) return text
+  const digits = await recognizeDigitsOnly(dataUrl)
+  return digits.trim() ? `${text}
+${digits}` : text
 }
 
 async function ocrForImage(params: {

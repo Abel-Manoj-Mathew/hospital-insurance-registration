@@ -43,13 +43,3 @@ ${text}
     res.json({ text, confidence })
   }),
 )
-
-// Dev-only: the browser reports client-side diagnostics (e.g. whether an Aadhaar QR decoded) so they
-// can be read from this server's log when testing on a phone, where there is no console.
-ocrRouter.post('/debug', (req, res) => {
-  if (process.env.NODE_ENV !== 'production') {
-    const { message } = z.object({ message: z.string().max(500) }).parse(req.body)
-    console.log(`[client] ${message}`)
-  }
-  res.status(204).end()
-})

@@ -20,7 +20,9 @@ _ocr = PaddleOCR(
     lang="en",
     use_doc_orientation_classify=False,
     use_doc_unwarping=False,
-    use_textline_orientation=True,
+    # Off: the line-orientation classifier misjudged left-aligned address lines beside a QR code and
+    # garbled them ("S/O: Manoj P Varghese" -> "Lar4rjik"); documents are captured upright anyway.
+    use_textline_orientation=False,
     # Paddle 3.x's oneDNN CPU path crashes on some machines ("ConvertPirAttribute2RuntimeAttribute").
     enable_mkldnn=False,
 )
