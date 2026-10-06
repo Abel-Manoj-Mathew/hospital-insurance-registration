@@ -85,6 +85,43 @@ async function ocrForImage(params: {
   return { status: 'ok', text, confidence: ocr.confidence }
 }
 
+/**
+ * Renders a PDF's pages to images and OCRs each one, joining the text (so a two-page e-Aadhaar gives
+ * name/DOB/number from the front page and the address from the back). Pages that can't be read are
+ * skipped; returns undefined if the PDF can't be opened or no page yielded text, so the caller can
+ * fall back to manual review.
+ */
+async function ocrForPdf(
+  documentType: DocumentTypeId,
+  dataUrl: string,
+  onProgress?: (percent: number) => void,
+): Promise<{ text: string; confidence: number } | undefined> {
+  let pages: { dataUrl: string; sizeBytes: number }[]
+  try {
+    // Loaded on demand so pdf.js stays out of the main bundle for photo uploads.
+    const { renderPdfPages } = await import('@/services/ocr/pdfRender')
+    pages = await renderPdfPages(dataUrl)
+  } catch {
+    return undefined
+  }
+
+  const reads: { text: string; confidence: number }[] = []
+  for (const [index, page] of pages.entries()) {
+    const result = await ocrForImage({
+      documentType,
+      sizeBytes: page.sizeBytes,
+      dataUrl: page.dataUrl,
+      onProgress: onProgress && ((percent) => onProgress(Math.round(((index + percent / 100) / pages.length) * 100))),
+    })
+    if (result.status === 'ok') reads.push(result)
+  }
+  if (reads.length === 0) return undefined
+  return {
+    text: reads.map((read) => read.text).join('\n'),
+    confidence: Math.min(...reads.map((read) => read.confidence)),
+  }
+}
+
 function finalizeFromOcr(
   documentType: DocumentTypeId,
   sessionId: string,
@@ -110,8 +147,10 @@ export async function processDocumentCapture(params: ProcessDocumentParams): Pro
   }
 
   if (mimeType === 'application/pdf') {
-    // Tesseract.js only reads raster images in the browser; PDFs are queued for manual review.
-    return { outcome: 'review_required', documentReference: referenceFor(documentType, sessionId, 'pdf') }
+    const pdfText = await ocrForPdf(documentType, dataUrl, onProgress)
+    // Unreadable PDF (e.g. password-protected or scanned too poorly): queue for manual review.
+    if (!pdfText) return { outcome: 'review_required', documentReference: referenceFor(documentType, sessionId, 'pdf') }
+    return finalizeFromOcr(documentType, sessionId, pdfText.text, pdfText.confidence)
   }
 
   const result = await ocrForImage({ documentType, sizeBytes, dataUrl, onProgress })
@@ -166,21 +205,30 @@ export async function processDocumentBackSide(params: DocumentBackSideParams): P
     return { outcome: 'retake_required', rejection: rejectionFor('lowResolution') }
   }
 
+  let backText: string
+  let backConfidence: number
   if (mimeType === 'application/pdf') {
-    // The back side can't be OCR'd as a PDF here, so the address can't be confirmed automatically.
-    const { fields } = extractFieldsForDocument(documentType, front.ocrText)
-    return {
-      outcome: 'review_required',
-      extractedFields: fields,
-      documentReference: referenceFor(documentType, sessionId, `${front.ocrText}|pdf-back`),
+    const pdfText = await ocrForPdf(documentType, dataUrl, onProgress)
+    if (!pdfText) {
+      // The back side couldn't be read, so the address can't be confirmed automatically.
+      const { fields } = extractFieldsForDocument(documentType, front.ocrText)
+      return {
+        outcome: 'review_required',
+        extractedFields: fields,
+        documentReference: referenceFor(documentType, sessionId, `${front.ocrText}|pdf-back`),
+      }
     }
+    backText = pdfText.text
+    backConfidence = pdfText.confidence
+  } else {
+    const result = await ocrForImage({ documentType, sizeBytes, dataUrl, onProgress })
+    if (result.status === 'retake') return { outcome: 'retake_required', rejection: result.rejection }
+    if (result.status === 'failed') return { outcome: 'failed' }
+    backText = result.text
+    backConfidence = result.confidence
   }
 
-  const result = await ocrForImage({ documentType, sizeBytes, dataUrl, onProgress })
-  if (result.status === 'retake') return { outcome: 'retake_required', rejection: result.rejection }
-  if (result.status === 'failed') return { outcome: 'failed' }
-
-  const combinedText = `${front.ocrText}\n${result.text}`
-  const combinedConfidence = Math.min(front.confidence, result.confidence)
+  const combinedText = `${front.ocrText}\n${backText}`
+  const combinedConfidence = Math.min(front.confidence, backConfidence)
   return finalizeFromOcr(documentType, sessionId, combinedText, combinedConfidence)
 }

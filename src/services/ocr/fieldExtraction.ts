@@ -72,7 +72,7 @@ function cleanNameLine(line: string): string {
 
 function isPlausibleName(candidate: string): boolean {
   const words = candidate.split(' ').filter((word) => word.length > 1)
-  return candidate.length >= 3 && words.length >= 1 && !/GOVERNMENT|INDIA|AADHAAR|MALE|FEMALE|BIRTH|DOB|UNIQUE|AUTHORITY/i.test(candidate)
+  return candidate.length >= 3 && words.length >= 1 && !/GOVERNMENT|INDIA|AADHAAR|MALE|FEMALE|BIRTH|DOB|UNIQUE|AUTHORITY|MOTHER|FATHER|HUSBAND|WIFE|GUARDIAN/i.test(candidate)
 }
 
 /**
