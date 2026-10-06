@@ -5,6 +5,7 @@ import { documentsRouter } from './routes/documents.js'
 import { bedPreferencesRouter } from './routes/bedPreferences.js'
 import { submissionRouter } from './routes/submission.js'
 import { ocrRouter } from './routes/ocr.js'
+import { amalaRouter } from './routes/amala.js'
 import { errorMiddleware } from './lib/errors.js'
 
 const PORT = Number(process.env.PORT ?? 4000)
@@ -24,6 +25,7 @@ app.use('/api/sessions', sessionsRouter)
 app.use('/api/sessions/:sessionId/documents', documentsRouter)
 app.use('/api/sessions/:sessionId/bed-preferences', bedPreferencesRouter)
 app.use('/api/sessions/:sessionId/submit', submissionRouter)
+app.use('/api/amala', amalaRouter)
 
 app.use(errorMiddleware)
 

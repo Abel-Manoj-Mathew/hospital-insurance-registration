@@ -105,3 +105,21 @@ model BedPreference {
   @@unique([sessionId, rank])
   @@map("bed_preferences")
 }
+
+model Amala {
+  id              String    @id @default(uuid())
+  patientName     String
+  dateOfBirth     DateTime
+  address         String
+  aadhaarNumber   String
+  dateOfAdmission DateTime
+  dateOfDischarge DateTime?
+  diagnosis       String
+  packageName     String
+  estimatedCost   Decimal
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("amala")
+}
+
