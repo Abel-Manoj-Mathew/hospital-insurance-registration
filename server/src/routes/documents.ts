@@ -4,6 +4,7 @@ import { prisma } from '../prismaClient.js'
 import { asyncHandler, HttpError } from '../lib/errors.js'
 import { serializeSession } from '../lib/serialize.js'
 import { DOCUMENT_TYPE_IDS } from '../lib/constants.js'
+import { encryptAadhaar } from '../lib/encryption.js'
 
 export const documentsRouter = Router({ mergeParams: true })
 
@@ -31,13 +32,24 @@ documentsRouter.put(
     const sessionExists = await prisma.session.findUnique({ where: { id: sessionId }, select: { id: true } })
     if (!sessionExists) throw new HttpError(404, 'session_not_found')
 
+    const fieldsToSave = patch.extractedFields?.map(f => {
+      if (f.labelKey === 'fields.aadhaarNumber') {
+        const clean = f.value.replace(/\s/g, '')
+        if (/^[0-9]{12}$/.test(clean)) {
+          return { ...f, value: encryptAadhaar(clean) }
+        }
+        return f // Keep unencrypted if it's a bad OCR read, so user can correct it
+      }
+      return f
+    })
+
     const data = {
       status: patch.status,
       captureMethod: patch.captureMethod,
       capturedAt: patch.capturedAt ? new Date(patch.capturedAt) : undefined,
       rejectionReasonKey: patch.rejection?.reasonKey ?? null,
       rejectionDetailKey: patch.rejection?.detailKey ?? null,
-      extractedFields: patch.extractedFields ?? undefined,
+      extractedFields: fieldsToSave ?? undefined,
       documentReference: patch.documentReference ?? null,
     }
 

@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { BED_PREFERENCE_IDS, DOCUMENT_TYPE_IDS } from './constants.js'
+import { maskAadhaar } from './encryption.js'
 
 type SessionWithRelations = Prisma.SessionGetPayload<{
   include: { documents: true; bedPreferences: true }
@@ -11,6 +12,13 @@ export function serializeSession(session: SessionWithRelations) {
   const documents = Object.fromEntries(
     DOCUMENT_TYPE_IDS.map((type) => {
       const record = documentsByType.get(type)
+      let extractedFields = record?.extractedFields as Array<{labelKey: string, value: string}> | undefined
+      if (extractedFields) {
+        extractedFields = extractedFields.map(f => 
+          f.labelKey === 'fields.aadhaarNumber' ? { ...f, value: maskAadhaar(f.value) } : f
+        )
+      }
+
       return [
         type,
         record
@@ -23,7 +31,7 @@ export function serializeSession(session: SessionWithRelations) {
               rejection: record.rejectionReasonKey
                 ? { reasonKey: record.rejectionReasonKey, detailKey: record.rejectionDetailKey ?? undefined }
                 : undefined,
-              extractedFields: record.extractedFields ?? undefined,
+              extractedFields: extractedFields ?? undefined,
               documentReference: record.documentReference ?? undefined,
             }
           : { documentType: type, status: 'not_uploaded' as const, version: 0 },

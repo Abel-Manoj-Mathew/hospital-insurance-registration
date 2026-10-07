@@ -59,10 +59,16 @@ function matchFromList(text: string, candidates: readonly string[]): string | un
 }
 
 function matchName(text: string): string | undefined {
-  // Same-line only ([ \t], not \s) so the name can't run on into the next line's label.
-  const match = /\bNAME\b[ \t]*[:\-]?[ \t]*([A-Z][A-Za-z.' \t]{2,40})/i.exec(text)
-  if (!match) return undefined
-  return match[1].trim().split(/\s{2,}/)[0]
+  // Allow any whitespace (including multiple newlines) between "NAME" and the actual name.
+  const pattern = /\bNAME\b[ \t]*[:\-]?\s*([A-Z][A-Za-z.' \t]{2,40})/gi
+  for (const match of text.matchAll(pattern)) {
+    const nameCandidate = match[1].trim().split(/\s{2,}/)[0]
+    // Reject if the captured text is actually just the next field's label
+    if (!/^(?:POLICY|GENDER|DOB|DATE|MEDISEP|UHID|EMPLOYEE|DEPARTMENT|REPORT|TEST|DEPENDENTS|RELATION|ADDRESS)/i.test(nameCandidate)) {
+      return nameCandidate
+    }
+  }
+  return undefined
 }
 
 /** Keeps only Latin letters and name punctuation; OCR of bilingual cards adds Malayalam/Hindi glyphs and symbols. */

@@ -48,7 +48,7 @@ export function amalaDataFromAadhaarFields(json: Prisma.JsonValue | null) {
   return {
     patientName: fieldValue(fields, 'fields.aadhaarName') ?? null,
     address: fieldValue(fields, 'fields.address') ?? null,
-    aadhaarNumber: digits && /^[0-9]{12}$/.test(digits) ? encryptAadhaar(digits) : null,
+    aadhaarNumber: digits ? (digits.includes(':') ? digits : (/^[0-9]{12}$/.test(digits) ? encryptAadhaar(digits) : null)) : null,
     dateOfBirth: null as Date | null,
     yearOfBirth: null as number | null,
     ...parseDateOfBirth(fieldValue(fields, 'fields.dateOfBirth')),
