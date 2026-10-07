@@ -71,6 +71,7 @@ model Session {
 
   documents      Document[]
   bedPreferences BedPreference[]
+  amala          Amala?
 
   @@map("sessions")
 }
@@ -106,17 +107,24 @@ model BedPreference {
   @@map("bed_preferences")
 }
 
+// One row per patient. Created from the patient's submission (name, date of birth, address and
+// Aadhaar number come from their Aadhaar); staff fill in the admission and billing fields later.
+// Fields the patient's Aadhaar didn't give us are null.
 model Amala {
   id              String    @id @default(uuid())
-  patientName     String
-  dateOfBirth     DateTime
-  address         String
-  aadhaarNumber   String
-  dateOfAdmission DateTime
+  sessionId       String?   @unique
+  session         Session?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  patientName     String?
+  dateOfBirth     DateTime?
+  // Set when the Aadhaar prints only a year of birth, so dateOfBirth stays null.
+  yearOfBirth     Int?
+  address         String?
+  aadhaarNumber   String?
+  dateOfAdmission DateTime?
   dateOfDischarge DateTime?
-  diagnosis       String
-  packageName     String
-  estimatedCost   Decimal
+  diagnosis       String?
+  packageName     String?
+  estimatedCost   Decimal?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

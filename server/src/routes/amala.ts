@@ -54,7 +54,8 @@ function isAuthorizedForUnmask(req: Request): boolean {
   )
 }
 
-function processAadhaarOutput(encryptedAadhaar: string, isAuthorized: boolean): string {
+function processAadhaarOutput(encryptedAadhaar: string | null, isAuthorized: boolean): string | null {
+  if (!encryptedAadhaar) return null
   const decrypted = decryptAadhaar(encryptedAadhaar)
   return isAuthorized ? decrypted : maskAadhaar(decrypted)
 }

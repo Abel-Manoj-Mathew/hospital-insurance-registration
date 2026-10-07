@@ -3,6 +3,7 @@ import { Router } from 'express'
 import { prisma } from '../prismaClient.js'
 import { asyncHandler, HttpError } from '../lib/errors.js'
 import { REQUIRED_DOCUMENT_TYPE_IDS, SATISFIED_DOCUMENT_STATUSES } from '../lib/constants.js'
+import { amalaDataFromAadhaarFields } from '../lib/amalaFromSession.js'
 
 export const submissionRouter = Router({ mergeParams: true })
 
@@ -35,10 +36,23 @@ submissionRouter.post(
     const referenceId = `HSP-${randomInt(100_000, 999_999)}`
     const submittedAt = new Date()
 
-    await prisma.session.update({
-      where: { id: sessionId },
-      data: { submissionStatus: 'submitted', submissionReferenceId: referenceId, submittedAt },
-    })
+    // Copy the patient's Aadhaar details into the amala table in the same transaction as the
+    // submission, so a submitted session always has its record.
+    const amalaData = amalaDataFromAadhaarFields(
+      session.documents.find((doc) => doc.documentType === 'aadhaar')?.extractedFields ?? null,
+    )
+
+    await prisma.$transaction([
+      prisma.session.update({
+        where: { id: sessionId },
+        data: { submissionStatus: 'submitted', submissionReferenceId: referenceId, submittedAt },
+      }),
+      prisma.amala.upsert({
+        where: { sessionId },
+        create: { sessionId, ...amalaData },
+        update: amalaData,
+      }),
+    ])
 
     res.json({ referenceId, submittedAt: submittedAt.toISOString() })
   }),
