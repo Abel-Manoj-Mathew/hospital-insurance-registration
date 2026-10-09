@@ -265,6 +265,7 @@ export const ml = {
     insurerName: 'ഇൻഷുറർ',
     policyNumber: 'പോളിസി നമ്പർ',
     memberId: 'അംഗത്വ ഐഡി',
+    medisepId: 'മെഡിസെപ് ഐഡി (MEDISEP ID)',
     sumInsured: 'സം ഇൻഷ്വേർഡ്',
     reportDate: 'റിപ്പോർട്ട് തീയതി',
     testName: 'പരിശോധനയുടെ പേര്',

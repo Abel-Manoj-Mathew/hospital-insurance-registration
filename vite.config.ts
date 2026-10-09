@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     // Lets the app be opened through an HTTPS tunnel (needed for camera access on a phone) with
     // the API reached on the same origin, so no CORS or mixed-content issues.
-    allowedHosts: ['.trycloudflare.com', '.bore.pub', 'bore.pub'],
+    allowedHosts: true,
     proxy: { '/api': 'http://localhost:4000' },
   },
   resolve: {

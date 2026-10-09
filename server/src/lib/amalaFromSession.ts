@@ -37,20 +37,42 @@ export function parseDateOfBirth(value: string | undefined): { dateOfBirth?: Dat
   return valid ? { dateOfBirth: date, yearOfBirth: year } : {}
 }
 
+export interface DocumentWithFields {
+  documentType: string
+  extractedFields: Prisma.JsonValue | null
+}
+
 /**
- * The patient-owned columns of an Amala row, built from their Aadhaar document's extracted fields
- * (including any corrections they made on the review page). The Aadhaar number is stored encrypted,
- * and only when it is a clean 12-digit number.
+ * The patient-owned columns of an Amala row, built from session documents' extracted fields
+ * (Aadhaar fields + Insurance member ID / policy number stored in policyId).
  */
-export function amalaDataFromAadhaarFields(json: Prisma.JsonValue | null) {
-  const fields = parseFields(json)
-  const digits = fieldValue(fields, 'fields.aadhaarNumber')?.replace(/\s/g, '')
+export function amalaDataFromSession(documents: DocumentWithFields[]) {
+  const aadhaarDoc = documents.find((doc) => doc.documentType === 'aadhaar')
+  const insuranceDoc = documents.find((doc) => doc.documentType === 'insuranceCard')
+  const policyDoc = documents.find((doc) => doc.documentType === 'policyDocument')
+
+  const aadhaarFields = parseFields(aadhaarDoc?.extractedFields ?? null)
+  const insuranceFields = parseFields(insuranceDoc?.extractedFields ?? null)
+  const policyFields = parseFields(policyDoc?.extractedFields ?? null)
+
+  const digits = fieldValue(aadhaarFields, 'fields.aadhaarNumber')?.replace(/\s/g, '')
+  const memberId = fieldValue(insuranceFields, 'fields.memberId') ?? fieldValue(policyFields, 'fields.policyNumber') ?? null
+  const medisepId = fieldValue(insuranceFields, 'fields.medisepId') ?? fieldValue(policyFields, 'fields.medisepId') ?? null
+
   return {
-    patientName: fieldValue(fields, 'fields.aadhaarName') ?? null,
-    address: fieldValue(fields, 'fields.address') ?? null,
+    patientName: fieldValue(aadhaarFields, 'fields.aadhaarName') ?? null,
+    address: fieldValue(aadhaarFields, 'fields.address') ?? null,
     aadhaarNumber: digits ? (digits.includes(':') ? digits : (/^[0-9]{12}$/.test(digits) ? encryptAadhaar(digits) : null)) : null,
+    policyId: memberId,
+    medisepId: medisepId,
     dateOfBirth: null as Date | null,
     yearOfBirth: null as number | null,
-    ...parseDateOfBirth(fieldValue(fields, 'fields.dateOfBirth')),
+    ...parseDateOfBirth(fieldValue(aadhaarFields, 'fields.dateOfBirth')),
   }
 }
+
+/** Legacy helper wrapping Aadhaar-only fields */
+export function amalaDataFromAadhaarFields(json: Prisma.JsonValue | null) {
+  return amalaDataFromSession([{ documentType: 'aadhaar', extractedFields: json }])
+}
+

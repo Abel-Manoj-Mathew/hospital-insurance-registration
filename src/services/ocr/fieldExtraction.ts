@@ -229,9 +229,18 @@ export function extractFieldsForDocument(documentType: DocumentTypeId, ocrText: 
         matchLabelled(ocrText, 'POLICY\\s*(?:NO\\.?|NUMBER)?') ??
         matchLabelled(ocrText, '(?:BENEFICIARY|ENROL+MENT|UHID|HEALTH)\\s*(?:ID|NO\\.?|NUMBER)') ??
         matchLabelled(ocrText, '(?:[A-Z]+\\s+)?ID\\s*NO\\.?')
+      const medisepId =
+        matchLabelled(ocrText, 'MEDISEP\\s*(?:ID|NO\\.?)?') ??
+        /\bMEDISEP\s*(?:ID|NO\.?)?\b[^\d\n]*[:\s#-]*(\d{5,12})/i.exec(ocrText)?.[1]
       const name = matchName(ocrText)
-      fields.push(...([field('fields.insuranceName', name), field('fields.memberId', memberId)].filter(Boolean) as ExtractedField[]))
-      primaryFieldFound = Boolean(memberId)
+      fields.push(
+        ...([
+          field('fields.insuranceName', name),
+          field('fields.memberId', memberId),
+          field('fields.medisepId', medisepId),
+        ].filter(Boolean) as ExtractedField[]),
+      )
+      primaryFieldFound = Boolean(memberId || medisepId)
       break
     }
     case 'policyDocument': {

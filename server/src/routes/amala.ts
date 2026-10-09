@@ -12,6 +12,7 @@ const aadhaarRegex = /^[0-9]{12}$/
 const dateSchema = z.union([
   z.date(),
   z.string().transform((val, ctx) => {
+    if (!val || val.trim() === '') return undefined
     const d = new Date(val)
     if (isNaN(d.getTime())) {
       ctx.addIssue({
@@ -24,21 +25,33 @@ const dateSchema = z.union([
   }),
 ])
 
+const optionalDateSchema = dateSchema.optional().nullable()
+
 const createAmalaSchema = z.object({
   patientName: z.string().trim().min(1, 'Patient name is required'),
-  dateOfBirth: dateSchema,
-  address: z.string().trim().min(1, 'Address is required'),
+  dateOfBirth: optionalDateSchema,
+  address: z.string().trim().optional().nullable(),
   aadhaarNumber: z
     .string()
     .trim()
-    .refine((val) => aadhaarRegex.test(val), {
+    .refine((val) => !val || aadhaarRegex.test(val), {
       message: 'Aadhaar number must contain exactly 12 digits.',
-    }),
-  dateOfAdmission: dateSchema,
-  dateOfDischarge: dateSchema.optional().nullable(),
-  diagnosis: z.string().trim().min(1, 'Diagnosis is required'),
-  packageName: z.string().trim().min(1, 'Package name is required'),
-  estimatedCost: z.number().or(z.string().pipe(z.coerce.number())),
+    })
+    .optional()
+    .nullable(),
+  department: z.string().trim().optional().nullable(),
+  policyId: z.string().trim().optional().nullable(),
+  medisepId: z.string().trim().optional().nullable(),
+  caseId: z.string().trim().optional().nullable(),
+  roomDays: z.number().or(z.string().pipe(z.coerce.number())).optional().nullable(),
+  proposedLineOfTreatment: z.string().trim().optional().nullable(),
+  investigationDetails: z.string().trim().optional().nullable(),
+  treatingDoctorName: z.string().trim().optional().nullable(),
+  dateOfAdmission: optionalDateSchema,
+  dateOfDischarge: optionalDateSchema,
+  diagnosis: z.string().trim().optional().nullable(),
+  packageName: z.string().trim().optional().nullable(),
+  estimatedCost: z.number().or(z.string().pipe(z.coerce.number())).optional().nullable(),
 })
 
 const updateAmalaSchema = createAmalaSchema.partial()
@@ -75,7 +88,7 @@ amalaRouter.post(
     }
 
     const data = parseResult.data
-    const encryptedAadhaar = encryptAadhaar(data.aadhaarNumber)
+    const encryptedAadhaar = data.aadhaarNumber ? encryptAadhaar(data.aadhaarNumber) : null
 
     const record = await prisma.amala.create({
       data: {
@@ -83,7 +96,15 @@ amalaRouter.post(
         dateOfBirth: data.dateOfBirth,
         address: data.address,
         aadhaarNumber: encryptedAadhaar,
-        dateOfAdmission: data.dateOfAdmission,
+        department: data.department ?? null,
+        policyId: data.policyId ?? null,
+        medisepId: data.medisepId ?? null,
+        caseId: data.caseId ?? null,
+        roomDays: data.roomDays ?? null,
+        proposedLineOfTreatment: data.proposedLineOfTreatment ?? null,
+        investigationDetails: data.investigationDetails ?? null,
+        treatingDoctorName: data.treatingDoctorName ?? null,
+        dateOfAdmission: data.dateOfAdmission ?? null,
         dateOfDischarge: data.dateOfDischarge ?? null,
         diagnosis: data.diagnosis,
         packageName: data.packageName,
@@ -162,8 +183,16 @@ amalaRouter.put(
     if (data.patientName !== undefined) updateData.patientName = data.patientName
     if (data.dateOfBirth !== undefined) updateData.dateOfBirth = data.dateOfBirth
     if (data.address !== undefined) updateData.address = data.address
-    if (data.aadhaarNumber !== undefined) updateData.aadhaarNumber = encryptAadhaar(data.aadhaarNumber)
-    if (data.dateOfAdmission !== undefined) updateData.dateOfAdmission = data.dateOfAdmission
+    if (data.aadhaarNumber !== undefined) updateData.aadhaarNumber = data.aadhaarNumber ? encryptAadhaar(data.aadhaarNumber) : null
+    if (data.department !== undefined) updateData.department = data.department ?? null
+    if (data.policyId !== undefined) updateData.policyId = data.policyId ?? null
+    if (data.medisepId !== undefined) updateData.medisepId = data.medisepId ?? null
+    if (data.caseId !== undefined) updateData.caseId = data.caseId ?? null
+    if (data.roomDays !== undefined) updateData.roomDays = data.roomDays ?? null
+    if (data.proposedLineOfTreatment !== undefined) updateData.proposedLineOfTreatment = data.proposedLineOfTreatment ?? null
+    if (data.investigationDetails !== undefined) updateData.investigationDetails = data.investigationDetails ?? null
+    if (data.treatingDoctorName !== undefined) updateData.treatingDoctorName = data.treatingDoctorName ?? null
+    if (data.dateOfAdmission !== undefined) updateData.dateOfAdmission = data.dateOfAdmission ?? null
     if (data.dateOfDischarge !== undefined) updateData.dateOfDischarge = data.dateOfDischarge ?? null
     if (data.diagnosis !== undefined) updateData.diagnosis = data.diagnosis
     if (data.packageName !== undefined) updateData.packageName = data.packageName

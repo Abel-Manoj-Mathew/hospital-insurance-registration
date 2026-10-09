@@ -261,6 +261,7 @@ export const en = {
     insurerName: 'Insurer',
     policyNumber: 'Policy number',
     memberId: 'Member ID',
+    medisepId: 'MEDISEP ID',
     sumInsured: 'Sum insured',
     reportDate: 'Report date',
     testName: 'Test name',

@@ -9,15 +9,18 @@ import { amalaRouter } from './routes/amala.js'
 import { errorMiddleware } from './lib/errors.js'
 
 const PORT = Number(process.env.PORT ?? 4000)
-const ALLOWED_ORIGIN = (process.env.CORS_ORIGIN ?? 'http://localhost:5173').split(',').map((origin) => origin.trim())
+const ALLOWED_ORIGIN = (process.env.CORS_ORIGIN ?? 'http://localhost:5173,*').split(',').map((origin) => origin.trim())
 
 const app = express()
-app.use(cors({ origin: ALLOWED_ORIGIN }))
+app.use(cors({ origin: ALLOWED_ORIGIN.includes('*') ? true : ALLOWED_ORIGIN }))
 // Card photos are far bigger than the 1mb default, so the OCR route gets its own parser, mounted first.
 app.use('/api/ocr', express.json({ limit: '12mb' }), ocrRouter)
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' })
+})
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 

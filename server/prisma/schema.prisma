@@ -120,7 +120,15 @@ model Amala {
   yearOfBirth     Int?
   address         String?
   aadhaarNumber   String?
-  dateOfAdmission DateTime?
+  department      String?
+  policyId                String?   @map("policy_id")
+  medisepId               String?   @map("medisep_id")
+  caseId                  String?   @map("case_id")
+  roomDays                Int?      @map("room_days")
+  proposedLineOfTreatment String?   @map("proposed_line_of_treatment")
+  investigationDetails    String?   @map("investigation_details")
+  treatingDoctorName      String?   @map("treating_doctor_name")
+  dateOfAdmission         DateTime?
   dateOfDischarge DateTime?
   diagnosis       String?
   packageName     String?

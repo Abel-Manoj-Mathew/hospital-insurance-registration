@@ -44,7 +44,7 @@ export const DOCUMENT_CHECKLIST: DocumentMeta[] = [
     captureFrame: 'card',
     allowCamera: true,
     allowUpload: true,
-    reviewFieldKeys: ['fields.insuranceName', 'fields.memberId'],
+    reviewFieldKeys: ['fields.insuranceName', 'fields.memberId', 'fields.medisepId'],
   },
   {
     id: 'policyDocument',
